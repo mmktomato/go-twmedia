@@ -3,5 +3,6 @@ My practice of Golang
 
 ```
 $ dep ensure
-$ go build -o main && ./main <tweet url>
+$ go run main.go
+$ go build -o bin/main
 ```

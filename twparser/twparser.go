@@ -1,6 +1,4 @@
-// TODO: separate this file out of 'main' package.
-
-package main
+package twparser
 
 import (
 	"golang.org/x/net/html"

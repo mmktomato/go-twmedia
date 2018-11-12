@@ -5,6 +5,8 @@ import (
 	"os"
 	"net/http"
 	"io"
+
+	"github.com/mmktomato/go-twmedia/twparser"
 )
 
 func fetchTweet(url string, fn func(io.Reader)) error {
@@ -28,7 +30,7 @@ func main() {
 			continue
 		}
 		fetchErr := fetchTweet(v, func(r io.Reader) {
-			twMedia, parseErr := ParseTweet(r)
+			twMedia, parseErr := twparser.ParseTweet(r)
 			if parseErr != nil {
 				fmt.Printf("%s : %v\n", v, parseErr)
 			}
