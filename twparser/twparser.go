@@ -3,6 +3,7 @@ package twparser
 import (
 	"golang.org/x/net/html"
 	"io"
+	"strings"
 )
 
 type TwMedia struct {
@@ -40,7 +41,9 @@ func parseMetaAttr(attrs []html.Attribute, twMedia *TwMedia) {
 		findAttr(attrs, "content", func(contentAttr html.Attribute) {
 			switch propAttr.Val {
 			case "og:image":
-				twMedia.imageUrls = append(twMedia.imageUrls, contentAttr.Val)
+				if isTargetImage(contentAttr.Val) {
+					twMedia.imageUrls = append(twMedia.imageUrls, contentAttr.Val)
+				}
 			case "og:video:url":
 				twMedia.videoUrl = contentAttr.Val
 			}
@@ -54,4 +57,8 @@ func findAttr(attrs []html.Attribute, key string, fn func(html.Attribute)) {
 			fn(v)
 		}
 	}
+}
+
+func isTargetImage(url string) bool {
+	return strings.HasSuffix(url, ":large")
 }
