@@ -7,21 +7,20 @@ import (
 )
 
 type TwMedia struct {
-	imageUrls []string
-	videoUrl  string
+	ImageUrls []string
+	VideoUrl  string
 }
 
 func ParseTweet(r io.Reader) (*TwMedia, error) {
 	res := &TwMedia{}
 	tokenizer := html.NewTokenizer(r)
 
-LOOP:
 	for {
 		tokenType := tokenizer.Next()
 		switch tokenType {
 		case html.ErrorToken:
 			if tokenizer.Err() == io.EOF {
-				break LOOP
+				return res, nil
 			}
 			return nil, tokenizer.Err()
 
@@ -43,10 +42,10 @@ func parseMetaAttr(attrs []html.Attribute, twMedia *TwMedia) {
 			switch propAttr.Val {
 			case "og:image":
 				if isTargetImage(contentAttr.Val) {
-					twMedia.imageUrls = append(twMedia.imageUrls, contentAttr.Val)
+					twMedia.ImageUrls = append(twMedia.ImageUrls, contentAttr.Val)
 				}
 			case "og:video:url":
-				twMedia.videoUrl = contentAttr.Val
+				twMedia.VideoUrl = contentAttr.Val
 			}
 		})
 	})

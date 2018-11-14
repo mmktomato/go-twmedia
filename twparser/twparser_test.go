@@ -29,15 +29,15 @@ func TestParseTweet_noMedia(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if len(twMedia.imageUrls) != len(tt.images) {
+		if len(twMedia.ImageUrls) != len(tt.images) {
 			t.Errorf("%s: length not match", tt.file)
 		}
-		for i, v := range twMedia.imageUrls {
+		for i, v := range twMedia.ImageUrls {
 			if v != tt.images[i] {
 				t.Errorf("%s: image not match", tt.file)
 			}
 		}
-		if twMedia.videoUrl != tt.video {
+		if twMedia.VideoUrl != tt.video {
 			t.Errorf("%s: video not match", tt.file)
 		}
 	}
