@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"net/http"
 	"io"
+	"net/http"
+	"os"
 
 	"github.com/mmktomato/go-twmedia/twparser"
 )
@@ -42,4 +42,3 @@ func main() {
 		}
 	}
 }
-

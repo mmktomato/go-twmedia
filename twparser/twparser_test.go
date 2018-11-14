@@ -1,20 +1,20 @@
 package twparser
 
 import (
-	"testing"
 	"bytes"
 	"io/ioutil"
+	"testing"
 )
 
 func TestParseTweet_noMedia(t *testing.T) {
 	tests := []struct {
-		file string
+		file   string
 		images []string
-		video string
+		video  string
 	}{
-		{ "testdata/tweet_no_media.html", make([]string, 0), "" },
-		{ "testdata/tweet_with_image.html", []string{ "https://example.com/image1.jpg:large",  "https://example.com/image2.jpg:large" }, "" },
-		{ "testdata/tweet_with_video.html", make([]string, 0), "https://example.com/video.mp4" },
+		{"testdata/tweet_no_media.html", make([]string, 0), ""},
+		{"testdata/tweet_with_image.html", []string{"https://example.com/image1.jpg:large", "https://example.com/image2.jpg:large"}, ""},
+		{"testdata/tweet_with_video.html", make([]string, 0), "https://example.com/video.mp4"},
 	}
 
 	for _, tt := range tests {

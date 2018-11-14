@@ -8,14 +8,14 @@ import (
 
 type TwMedia struct {
 	imageUrls []string
-	videoUrl string
+	videoUrl  string
 }
 
 func ParseTweet(r io.Reader) (*TwMedia, error) {
 	res := &TwMedia{}
 	tokenizer := html.NewTokenizer(r)
 
-	LOOP:
+LOOP:
 	for {
 		tokenType := tokenizer.Next()
 		switch tokenType {
@@ -25,7 +25,8 @@ func ParseTweet(r io.Reader) (*TwMedia, error) {
 			}
 			return nil, tokenizer.Err()
 
-		case html.StartTagToken: fallthrough
+		case html.StartTagToken:
+			fallthrough
 		case html.SelfClosingTagToken:
 			token := tokenizer.Token()
 			if token.Data == "meta" {
