@@ -21,7 +21,7 @@ func TestParseTweet(t *testing.T) {
 			},
 			"",
 		},
-		{"testdata/tweet_with_video.html", make(map[string]string), "https://example.com/video.mp4"},
+		{"testdata/tweet_with_video.html", make(map[string]string), "https://example.com/0123456789"},
 	}
 
 	for _, tt := range tests {

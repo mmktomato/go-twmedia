@@ -42,15 +42,15 @@ func onTweetFetched(r io.Reader) {
 
 func saveImage(url, filename string) error {
 	return fetch(url, func(r io.Reader) {
-		buf, readErr := ioutil.ReadAll(r)
-		if readErr != nil {
-			fmt.Printf("%s : %v\n", url, readErr)
+		buf, err := ioutil.ReadAll(r)
+		if err != nil {
+			fmt.Printf("%s : %v\n", url, err)
 			return
 		}
 
-		writeErr := ioutil.WriteFile(filename, buf, 0644)
-		if writeErr != nil {
-			fmt.Printf("%s : %v\n", url, writeErr)
+		err = ioutil.WriteFile(filename, buf, 0644)
+		if err != nil {
+			fmt.Printf("%s : %v\n", url, err)
 		}
 	})
 }
