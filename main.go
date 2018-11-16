@@ -3,33 +3,22 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 
 	"github.com/mmktomato/go-twmedia/twparser"
+	"github.com/mmktomato/go-twmedia/util"
 )
 
-func fetch(url string, fn func(io.Reader)) error {
-	res, err := http.Get(url)
+func onTweetFetched(r io.Reader) error {
+	twMedia, err := twparser.ParseTweet(r)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
-
-	fn(res.Body)
-	return nil
-}
-
-func onTweetFetched(r io.Reader) {
-	twMedia, err := twparser.ParseTweet(r)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
 	for url, filename := range twMedia.ImageUrls {
-		err = saveImage(url, filename)
+		err = util.Fetch(url, func(r io.Reader) error {
+			return util.Save(filename, r)
+		})
 		if err == nil {
 			fmt.Println(filename)
 		} else {
@@ -38,21 +27,8 @@ func onTweetFetched(r io.Reader) {
 	}
 
 	// TODO: save video
-}
 
-func saveImage(url, filename string) error {
-	return fetch(url, func(r io.Reader) {
-		buf, err := ioutil.ReadAll(r)
-		if err != nil {
-			fmt.Printf("%s : %v\n", url, err)
-			return
-		}
-
-		err = ioutil.WriteFile(filename, buf, 0644)
-		if err != nil {
-			fmt.Printf("%s : %v\n", url, err)
-		}
-	})
+	return nil
 }
 
 func main() {
@@ -64,7 +40,7 @@ func main() {
 		if i == 0 {
 			continue
 		}
-		err := fetch(v, onTweetFetched)
+		err := util.Fetch(v, onTweetFetched)
 		if err != nil {
 			fmt.Printf("%s : %v\n", v, err)
 		}
