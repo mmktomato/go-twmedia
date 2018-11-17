@@ -5,6 +5,8 @@ import (
 	"io"
 	neturl "net/url"
 	"strings"
+
+	"github.com/mmktomato/go-twmedia/twparser/video"
 )
 
 type TwMedia struct {
@@ -14,6 +16,55 @@ type TwMedia struct {
 
 func ParseTweet(r io.Reader) (*TwMedia, error) {
 	res := &TwMedia{make(map[string]string), ""}
+
+	err := tokenize(r, func(token html.Token) error {
+		switch token.Type {
+		case html.StartTagToken:
+			fallthrough
+		case html.SelfClosingTagToken:
+			if token.Data == "meta" {
+				err := parseMetaAttr(token.Attr, res)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+
+	return res, err
+}
+
+// ParseVideo returns playlist's url. Typically it has `.m3u8` extension.
+func ParseVideo(r io.Reader) (ret string, err error) {
+	// TODO: write test code.
+
+	err = tokenize(r, func(token html.Token) error {
+		switch token.Type {
+		case html.StartTagToken:
+			fallthrough
+		case html.SelfClosingTagToken:
+			if token.Data == "script" {
+				return findAttr(token.Attr, "src", func(srcAttr html.Attribute) error {
+					// TODO move to other package
+					if strings.Contains(srcAttr.Val, "TwitterVideoPlayerIframe") {
+						jsurl := srcAttr.Val
+						token, err := video.GetAuthToken(jsurl)
+						if err != nil {
+							return err
+						}
+						ret = token
+					}
+					return nil
+				})
+			}
+		}
+		return nil
+	})
+	return ret, err
+}
+
+func tokenize(r io.Reader, fn func(token html.Token) error) error {
 	tokenizer := html.NewTokenizer(r)
 
 	for {
@@ -21,23 +72,18 @@ func ParseTweet(r io.Reader) (*TwMedia, error) {
 		switch tokenType {
 		case html.ErrorToken:
 			if tokenizer.Err() == io.EOF {
-				return res, nil
+				return nil
 			}
-			return nil, tokenizer.Err()
+			return tokenizer.Err()
 
-		case html.StartTagToken:
-			fallthrough
-		case html.SelfClosingTagToken:
-			token := tokenizer.Token()
-			if token.Data == "meta" {
-				err := parseMetaAttr(token.Attr, res)
-				if err != nil {
-					return nil, err
-				}
+		default:
+			err := fn(tokenizer.Token())
+			if err != nil {
+				return err
 			}
 		}
 	}
-	return res, nil
+	return nil
 }
 
 func parseMetaAttr(attrs []html.Attribute, twMedia *TwMedia) error {

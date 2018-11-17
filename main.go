@@ -16,7 +16,7 @@ func onTweetFetched(r io.Reader) error {
 	}
 
 	for url, filename := range twMedia.ImageUrls {
-		err = util.Fetch(url, func(r io.Reader) error {
+		err := util.Fetch(url, func(r io.Reader) error {
 			return util.Save(filename, r)
 		})
 		if err == nil {
@@ -27,6 +27,19 @@ func onTweetFetched(r io.Reader) error {
 	}
 
 	// TODO: save video
+	if twMedia.VideoUrl != "" {
+		err := util.Fetch(twMedia.VideoUrl, func(r io.Reader) error {
+			playlistUrl, err := twparser.ParseVideo(r)
+			if err != nil {
+				return err
+			}
+			fmt.Println(playlistUrl)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
