@@ -76,3 +76,19 @@ func TestGetImageFilename(t *testing.T) {
 		}
 	}
 }
+
+func TestGetTweetId(t *testing.T) {
+	tests := []struct {
+		url, expectedId string
+	}{
+		{"https://twitter.com/some_account/status/id1", "id1"},
+		{"https://twitter.com/some_account/status/id2/photo/1", "id2"},
+	}
+
+	for _, tt := range tests {
+		res := getTweetId(tt.url)
+		if res != tt.expectedId {
+			t.Errorf("%s: id not match", tt.url)
+		}
+	}
+}

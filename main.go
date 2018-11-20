@@ -9,7 +9,7 @@ import (
 	"github.com/mmktomato/go-twmedia/util"
 )
 
-func onTweetFetched(r io.Reader) error {
+func onTweetFetched(tweetUrl string, r io.Reader) error {
 	twMedia, err := twparser.ParseTweet(r)
 	if err != nil {
 		return err
@@ -29,11 +29,11 @@ func onTweetFetched(r io.Reader) error {
 	// TODO: save video
 	if twMedia.VideoUrl != "" {
 		err := util.Fetch(twMedia.VideoUrl, func(r io.Reader) error {
-			playlistUrl, err := twparser.ParseVideo(r)
+			trackInfo, err := twparser.ParseVideo(tweetUrl, r)
 			if err != nil {
 				return err
 			}
-			fmt.Println(playlistUrl)
+			fmt.Println(trackInfo)
 			return nil
 		})
 		if err != nil {
@@ -53,7 +53,9 @@ func main() {
 		if i == 0 {
 			continue
 		}
-		err := util.Fetch(v, onTweetFetched)
+		err := util.Fetch(v, func(r io.Reader) error {
+			return onTweetFetched(v, r)
+		})
 		if err != nil {
 			fmt.Printf("%s : %v\n", v, err)
 		}
