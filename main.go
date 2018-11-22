@@ -27,7 +27,6 @@ func onTweetFetched(tweetUrl string, r io.Reader) error {
 		}
 	}
 
-	// TODO: save video
 	if twMedia.VideoUrl != "" {
 		// TODO: create 'SaveVideo' function in video package.
 		err := util.Fetch(twMedia.VideoUrl, func(r io.Reader) error {
@@ -35,8 +34,8 @@ func onTweetFetched(tweetUrl string, r io.Reader) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(trackInfo)
-			return nil
+
+			return video.SavePlaylist(trackInfo)
 		})
 		if err != nil {
 			return err

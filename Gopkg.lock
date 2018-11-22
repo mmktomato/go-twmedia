@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:f89f3aa237e1394f3d958bd5aae0bf2864768490f7a6763bacb2bf85001419d0"
+  name = "github.com/grafov/m3u8"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0b86a8a8eaf300b6dfaf5a7a32b6e0b86f094621"
+  version = "v0.10"
+
+[[projects]]
   branch = "master"
   digest = "1:1a1ecfa7b54ca3f7a0115ab5c578d7d6a5d8b605839c549e80260468c42f8be7"
   name = "golang.org/x/net"
@@ -15,6 +23,9 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["golang.org/x/net/html"]
+  input-imports = [
+    "github.com/grafov/m3u8",
+    "golang.org/x/net/html",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

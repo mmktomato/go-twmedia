@@ -6,9 +6,12 @@ import (
 	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 
+	"github.com/grafov/m3u8"
 	"github.com/mmktomato/go-twmedia/twparser/domutil"
 	"github.com/mmktomato/go-twmedia/util"
 )
@@ -39,7 +42,7 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 					return false, err
 				}
 				if authToken != "" {
-					ret, err = getTrackInfo(tweetId, authToken)
+					ret, err = fetchTrackInfo(tweetId, authToken)
 
 					return false, err
 				}
@@ -48,6 +51,35 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 		return true, nil
 	})
 	return ret, err
+}
+
+func SavePlaylist(track *TrackInfo) error {
+	u, err := url.Parse(track.PlaylistUrl)
+	if err != nil {
+		return err
+	}
+
+	baseUrl := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+
+	return util.Fetch(track.PlaylistUrl, func(r io.Reader) error {
+		playlist, listType, err := m3u8.DecodeFrom(r, true)
+		if err != nil {
+			return err
+		}
+
+		switch listType {
+		case m3u8.MEDIA:
+			mediapl := playlist.(*m3u8.MediaPlaylist)
+			// TODO: download and save
+			fmt.Printf("%+v\n", mediapl)
+		case m3u8.MASTER:
+			masterpl := playlist.(*m3u8.MasterPlaylist)
+			variant := findBiggestVideo(masterpl)
+			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI}
+			return SavePlaylist(nextTrack)
+		}
+		return nil
+	})
 }
 
 func getAuthToken(attrs []html.Attribute) (string, error) {
@@ -63,7 +95,7 @@ func getAuthToken(attrs []html.Attribute) (string, error) {
 	return token, nil
 }
 
-func getTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
+func fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
 	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
@@ -107,4 +139,12 @@ func extractAuthToken(jsurl string) (ret string, err error) {
 		return nil
 	})
 	return ret, err
+}
+
+func findBiggestVideo(masterpl *m3u8.MasterPlaylist) *m3u8.Variant {
+	s := masterpl.Variants[:]
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Bandwidth < s[j].Bandwidth
+	})
+	return s[len(s)-1]
 }
