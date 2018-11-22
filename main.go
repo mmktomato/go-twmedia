@@ -6,11 +6,12 @@ import (
 	"os"
 
 	"github.com/mmktomato/go-twmedia/twparser"
+	"github.com/mmktomato/go-twmedia/twparser/video"
 	"github.com/mmktomato/go-twmedia/util"
 )
 
 func onTweetFetched(tweetUrl string, r io.Reader) error {
-	twMedia, err := twparser.ParseTweet(r)
+	twMedia, err := twparser.ParseTweet(tweetUrl, r)
 	if err != nil {
 		return err
 	}
@@ -28,8 +29,9 @@ func onTweetFetched(tweetUrl string, r io.Reader) error {
 
 	// TODO: save video
 	if twMedia.VideoUrl != "" {
+		// TODO: create 'SaveVideo' function in video package.
 		err := util.Fetch(twMedia.VideoUrl, func(r io.Reader) error {
-			trackInfo, err := twparser.ParseVideo(tweetUrl, r)
+			trackInfo, err := video.ParseVideo(twMedia.TweetId, r)
 			if err != nil {
 				return err
 			}

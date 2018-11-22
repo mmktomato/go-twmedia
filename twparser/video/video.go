@@ -23,7 +23,34 @@ type videoConfig struct {
 	Track TrackInfo `json:"track"`
 }
 
-func GetAuthToken(attrs []html.Attribute) (string, error) {
+// ParseVideo returns *TrackInfo. It contains playlist url and content id.
+// Typically playlist url has `.m3u8` extension.
+func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
+	// TODO: write test code. needs mock for `Fetch` because video.GetAuthToken uses it.
+
+	err = domutil.Tokenize(r, func(token html.Token) (bool, error) {
+		switch token.Type {
+		case html.StartTagToken:
+			fallthrough
+		case html.SelfClosingTagToken:
+			if token.Data == "script" {
+				authToken, err := getAuthToken(token.Attr)
+				if err != nil {
+					return false, err
+				}
+				if authToken != "" {
+					ret, err = getTrackInfo(tweetId, authToken)
+
+					return false, err
+				}
+			}
+		}
+		return true, nil
+	})
+	return ret, err
+}
+
+func getAuthToken(attrs []html.Attribute) (string, error) {
 	jsurl, err := parseScriptAttr(attrs)
 	if err != nil {
 		return "", err
@@ -36,7 +63,7 @@ func GetAuthToken(attrs []html.Attribute) (string, error) {
 	return token, nil
 }
 
-func GetTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
+func getTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
 	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {

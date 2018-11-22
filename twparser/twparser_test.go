@@ -11,8 +11,16 @@ func TestParseTweet(t *testing.T) {
 		testfile string
 		images   map[string]string
 		video    string
+		tweetUrl string
+		tweetId  string
 	}{
-		{"testdata/tweet_no_media.html", make(map[string]string), ""},
+		{
+			"testdata/tweet_no_media.html",
+			make(map[string]string),
+			"",
+			"https://twitter.com/some_account/status/id1",
+			"id1",
+		},
 		{
 			"testdata/tweet_with_image.html",
 			map[string]string{
@@ -20,8 +28,16 @@ func TestParseTweet(t *testing.T) {
 				"https://example.com/image2.jpg:large": "image2.jpg",
 			},
 			"",
+			"https://twitter.com/some_account/status/id1",
+			"id1",
 		},
-		{"testdata/tweet_with_video.html", make(map[string]string), "https://example.com/0123456789"},
+		{
+			"testdata/tweet_with_video.html",
+			make(map[string]string),
+			"https://example.com/0123456789",
+			"https://twitter.com/some_account/status/id1",
+			"id1",
+		},
 	}
 
 	for _, tt := range tests {
@@ -31,11 +47,12 @@ func TestParseTweet(t *testing.T) {
 		}
 
 		r := bytes.NewReader(buf)
-		twMedia, err := ParseTweet(r)
+		twMedia, err := ParseTweet(tt.tweetUrl, r)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		// ImageUrls
 		if len(twMedia.ImageUrls) != len(tt.images) {
 			t.Errorf("%s: length not match", tt.testfile)
 		}
@@ -48,8 +65,15 @@ func TestParseTweet(t *testing.T) {
 				t.Errorf("%s: image not match (%s)", tt.testfile, expectedFilename)
 			}
 		}
+
+		// VideoUrl
 		if twMedia.VideoUrl != tt.video {
 			t.Errorf("%s: video not match", tt.testfile)
+		}
+
+		// TweetId
+		if twMedia.TweetId != tt.tweetId {
+			t.Errorf("%s: tweetId not match", tt.testfile)
 		}
 	}
 }

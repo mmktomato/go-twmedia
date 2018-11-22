@@ -9,18 +9,27 @@ import (
 	"strings"
 
 	"github.com/mmktomato/go-twmedia/twparser/domutil"
-	"github.com/mmktomato/go-twmedia/twparser/video"
 )
 
 type TwMedia struct {
 	ImageUrls map[string]string // url : filename
 	VideoUrl  string
+	TweetId   string
 }
 
 var tweetIdRegex = regexp.MustCompile(`^https://twitter.com/[^/]+/status/([^/]+)/?`)
 
-func ParseTweet(r io.Reader) (*TwMedia, error) {
-	res := &TwMedia{make(map[string]string), ""}
+func ParseTweet(tweetUrl string, r io.Reader) (*TwMedia, error) {
+	tweetId := getTweetId(tweetUrl)
+	if tweetId == "" {
+		return nil, errors.New("TweetId not found")
+	}
+
+	res := &TwMedia{
+		ImageUrls: make(map[string]string),
+		VideoUrl:  "",
+		TweetId:   tweetId,
+	}
 
 	err := domutil.Tokenize(r, func(token html.Token) (bool, error) {
 		switch token.Type {
@@ -38,37 +47,6 @@ func ParseTweet(r io.Reader) (*TwMedia, error) {
 	})
 
 	return res, err
-}
-
-// ParseVideo returns *video.TrackInfo. It contains playlist url and content id.
-// Typically playlist url has `.m3u8` extension.
-func ParseVideo(tweetUrl string, r io.Reader) (ret *video.TrackInfo, err error) {
-	// TODO: write test code. needs mock for `Fetch` because video.GetAuthToken uses it.
-
-	err = domutil.Tokenize(r, func(token html.Token) (bool, error) {
-		switch token.Type {
-		case html.StartTagToken:
-			fallthrough
-		case html.SelfClosingTagToken:
-			if token.Data == "script" {
-				authToken, err := video.GetAuthToken(token.Attr)
-				if err != nil {
-					return false, err
-				}
-				if authToken != "" {
-					tweetId := getTweetId(tweetUrl)
-					if tweetId == "" {
-						return false, errors.New("TweetId not found")
-					}
-					ret, err = video.GetTrackInfo(tweetId, authToken)
-
-					return false, err
-				}
-			}
-		}
-		return true, nil
-	})
-	return ret, err
 }
 
 func parseMetaAttr(attrs []html.Attribute, twMedia *TwMedia) error {
