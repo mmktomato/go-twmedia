@@ -12,15 +12,15 @@ func TestFindBiggestVideo(t *testing.T) {
 	big := &m3u8.Variant{URI: "/sample/big.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 30}}
 
 	tests := []struct {
-		masterpl *m3u8.MasterPlaylist
+		variants []*m3u8.Variant
 	}{
-		{&m3u8.MasterPlaylist{Variants: []*m3u8.Variant{small, medium, big}}},
-		{&m3u8.MasterPlaylist{Variants: []*m3u8.Variant{small, big, medium}}},
-		{&m3u8.MasterPlaylist{Variants: []*m3u8.Variant{big, medium, small}}},
+		{[]*m3u8.Variant{small, medium, big}},
+		{[]*m3u8.Variant{small, big, medium}},
+		{[]*m3u8.Variant{big, medium, small}},
 	}
 
 	for i, tt := range tests {
-		res := findBiggestVideo(tt.masterpl)
+		res := findBiggestVideo(tt.variants)
 		if res != big {
 			t.Errorf("%d: big is not returned.", i)
 		}

@@ -2,11 +2,13 @@ package video
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
 	"net/url"
+	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
@@ -69,12 +71,18 @@ func SavePlaylist(track *TrackInfo) error {
 
 		switch listType {
 		case m3u8.MEDIA:
-			mediapl := playlist.(*m3u8.MediaPlaylist)
-			// TODO: download and save
-			fmt.Printf("%+v\n", mediapl)
+			outFilename := track.ContentId + ".mp4"
+			err = runFfmpeg(track.PlaylistUrl, outFilename, "ffmpeg")
+			if err != nil {
+				return err
+			}
+			fmt.Println(outFilename)
 		case m3u8.MASTER:
 			masterpl := playlist.(*m3u8.MasterPlaylist)
-			variant := findBiggestVideo(masterpl)
+			if len(masterpl.Variants) < 1 {
+				return errors.New("No variants found")
+			}
+			variant := findBiggestVideo(masterpl.Variants)
 			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI}
 			return SavePlaylist(nextTrack)
 		}
@@ -141,10 +149,31 @@ func extractAuthToken(jsurl string) (ret string, err error) {
 	return ret, err
 }
 
-func findBiggestVideo(masterpl *m3u8.MasterPlaylist) *m3u8.Variant {
-	s := masterpl.Variants[:]
+func findBiggestVideo(variants []*m3u8.Variant) *m3u8.Variant {
+	s := variants
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Bandwidth < s[j].Bandwidth
 	})
 	return s[len(s)-1]
+}
+
+func runFfmpeg(playlistUrl, outFilename, ffmpegCmd string) error {
+	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -f mpegts <outFilename>
+	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -acodec aac -r 60 -bsf:a aac_adtstoasc -f mpegts <outFilename>
+
+	out, err := exec.Command(
+		ffmpegCmd, "-i", playlistUrl,
+		"-movflags", "faststart",
+		"-c", "copy",
+		"-f", "mpegts",
+		outFilename,
+	).CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	// TODO: hide ffmpeg's output to verbose log
+	fmt.Println(out)
+
+	return nil
 }
