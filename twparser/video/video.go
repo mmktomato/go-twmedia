@@ -173,7 +173,7 @@ func runFfmpeg(playlistUrl, outFilename, ffmpegCmd string) error {
 	}
 
 	// TODO: hide ffmpeg's output to verbose log
-	fmt.Println(out)
+	fmt.Println(string(out))
 
 	return nil
 }
