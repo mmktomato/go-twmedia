@@ -3,7 +3,7 @@ My practice of Golang
 
 ```bash
 $ dep ensure
-$ go build -o bin/twmedia
+$ go build -ldflags '-w -s' -o bin/twmedia
 $ bin/twmedia <URL>
 
 # or

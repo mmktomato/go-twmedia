@@ -9,7 +9,7 @@ RUN apk update \
     && apk add --no-cache ffmpeg git dep \
     #
     && dep ensure -v \
-    && go install \
+    && go install -ldflags='-w -s' \
     #
     && apk del --purge git dep
 
