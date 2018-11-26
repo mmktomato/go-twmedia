@@ -8,8 +8,7 @@ $ bin/twmedia <URL>
 
 # or
 $ go run main.go <URL>
-```
 
-```bash
-$ docker build -t my/twmedia .
-$ docker run --rm -v $PWD:/app <URL>
+# or
+$ docker run --rm -v $PWD:/app mmktomato/go-twmedia <URL>
+```
