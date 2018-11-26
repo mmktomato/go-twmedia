@@ -10,5 +10,5 @@ $ bin/twmedia <URL>
 $ go run main.go <URL>
 
 # or
-$ docker run --rm -v $PWD:/app mmktomato/go-twmedia <URL>
+$ docker run --rm -v $PWD:/app mmktomato/go-twmedia:latest <URL>
 ```
