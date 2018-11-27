@@ -2,8 +2,7 @@
 My practice of Golang
 
 ```bash
-$ dep ensure
-$ go build -ldflags '-w -s' -o bin/twmedia
+$ make
 $ bin/twmedia <URL>
 
 # or

@@ -6,12 +6,10 @@ WORKDIR $GOPATH/src/github.com/mmktomato/go-twmedia
 COPY . .
 
 RUN apk update \
-    && apk add --no-cache ffmpeg git dep \
-    #
-    && dep ensure -v \
-    && go install -ldflags='-w -s' \
-    #
-    && apk del --purge git dep
+    && apk add --no-cache ffmpeg git dep make \
+    && make goinstall \
+    && make clean \
+    && apk del --purge git dep make
 
 WORKDIR /app
 ENTRYPOINT ["go-twmedia"]
