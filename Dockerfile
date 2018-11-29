@@ -19,6 +19,6 @@ WORKDIR /mnt
 
 COPY --from=builder /go/bin/go-twmedia /usr/local/bin/
 
-RUN apk update && apk add --no-cache ffmpeg
+RUN apk update && apk add --no-cache ffmpeg ca-certificates
 
 ENTRYPOINT ["go-twmedia"]
