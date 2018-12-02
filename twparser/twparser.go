@@ -42,6 +42,10 @@ func ParseTweet(tweetUrl string, r io.Reader) (*TwMedia, error) {
 					return false, err
 				}
 			}
+		case html.EndTagToken:
+			if token.Data == "head" {
+				return false, nil
+			}
 		}
 		return true, nil
 	})

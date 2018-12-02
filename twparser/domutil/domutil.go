@@ -6,8 +6,6 @@ import (
 )
 
 func Tokenize(r io.Reader, fn func(token html.Token) (bool, error)) error {
-	// TODO: write test
-
 	tokenizer := html.NewTokenizer(r)
 
 	for {
