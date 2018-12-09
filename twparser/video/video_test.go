@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafov/m3u8"
+	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestFindBiggestVideo(t *testing.T) {
@@ -23,6 +24,30 @@ func TestFindBiggestVideo(t *testing.T) {
 		res := findBiggestVideo(tt.variants)
 		if res != big {
 			t.Errorf("%d: big is not returned.", i)
+		}
+	}
+}
+
+func TestExtractAuthToken(t *testing.T) {
+	tests := []struct {
+		jsresp, token string
+	}{
+		{`foobar authorization:"myToken" foobar`, "myToken"},
+		{`foobar authorization: "myToken" foobar`, "myToken"},
+		{`foobar`, ""},
+	}
+
+	for i, tt := range tests {
+		httpmock.Activate()
+		defer httpmock.Deactivate()
+
+		jsurl := "https://localhost/TwitterVideoPlayerIframe.js"
+		httpmock.RegisterResponder("GET", jsurl, httpmock.NewStringResponder(200, tt.jsresp))
+
+		token, err := extractAuthToken(jsurl)
+		if token != tt.token {
+			t.Errorf("%d: unexpected token -> %s", i, token)
+			t.Errorf("%d: err -> %v", i, err)
 		}
 	}
 }

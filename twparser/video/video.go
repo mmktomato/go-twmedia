@@ -56,7 +56,7 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 }
 
 func SavePlaylist(track *TrackInfo) error {
-	// unit test
+	// TODO: unit test
 	u, err := url.Parse(track.PlaylistUrl)
 	if err != nil {
 		return err
@@ -136,7 +136,6 @@ func parseScriptAttr(attrs []html.Attribute) (ret string, err error) {
 }
 
 func extractAuthToken(jsurl string) (ret string, err error) {
-	// TODO: unit test
 	err = util.Fetch(jsurl, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {

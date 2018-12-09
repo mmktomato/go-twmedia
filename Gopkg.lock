@@ -20,12 +20,21 @@
   pruneopts = "UT"
   revision = "03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe"
 
+[[projects]]
+  branch = "v1"
+  digest = "1:6c802dcce0c717e7fc42d788ee1e2c1393c64b60339d908c0585c32dc5dec994"
+  name = "gopkg.in/jarcoal/httpmock.v1"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "275e9df93516fc27a998eca24c8f1cca277ce5bf"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/grafov/m3u8",
     "golang.org/x/net/html",
+    "gopkg.in/jarcoal/httpmock.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
