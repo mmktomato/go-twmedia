@@ -1,6 +1,7 @@
 package video
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/grafov/m3u8"
@@ -49,5 +50,28 @@ func TestExtractAuthToken(t *testing.T) {
 			t.Errorf("%d: unexpected token -> %s", i, token)
 			t.Errorf("%d: err -> %v", i, err)
 		}
+	}
+}
+
+func TestFetchTrackInfo(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.Deactivate()
+
+	buf, err := ioutil.ReadFile("testdata/trackinfo.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tweetId := "myTweetId"
+	jsonUrl := "https://api.twitter.com/1.1/videos/tweet/config/myTweetId.json"
+	resp := string(buf)
+	httpmock.RegisterResponder("GET", jsonUrl, httpmock.NewStringResponder(200, resp))
+
+	track, err := fetchTrackInfo(tweetId, "myAuthToken")
+	if track.ContentId != "myContentId" {
+		t.Errorf("ContentId not match -> %v", track.ContentId)
+	}
+	if track.PlaylistUrl != "https://example.com/myvideo.m3u8" {
+		t.Errorf("PlaylistUrl not match -> %v", track.PlaylistUrl)
 	}
 }

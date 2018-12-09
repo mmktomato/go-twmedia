@@ -57,6 +57,9 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 
 func SavePlaylist(track *TrackInfo) error {
 	// TODO: unit test
+
+	// TODO: validate `track`. track.PlaylistUrl and track.ContentId.
+	// move the validation to `fetchTrackInfo` func.
 	u, err := url.Parse(track.PlaylistUrl)
 	if err != nil {
 		return err

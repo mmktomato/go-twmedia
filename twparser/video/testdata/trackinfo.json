@@ -1,0 +1,7 @@
+{
+  "track": {
+    "contentId": "myContentId",
+    "playbackUrl": "https://example.com/myvideo.m3u8",
+    "playbackType": "application/x-mpegURL"
+  }
+}
