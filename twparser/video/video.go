@@ -56,6 +56,7 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 }
 
 func SavePlaylist(track *TrackInfo) error {
+	// unit test
 	u, err := url.Parse(track.PlaylistUrl)
 	if err != nil {
 		return err
@@ -104,6 +105,7 @@ func getAuthToken(attrs []html.Attribute) (string, error) {
 }
 
 func fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
+	// TODO: unit test
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
 	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
@@ -134,6 +136,7 @@ func parseScriptAttr(attrs []html.Attribute) (ret string, err error) {
 }
 
 func extractAuthToken(jsurl string) (ret string, err error) {
+	// TODO: unit test
 	err = util.Fetch(jsurl, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
@@ -158,6 +161,8 @@ func findBiggestVideo(variants []*m3u8.Variant) *m3u8.Variant {
 }
 
 func runFfmpeg(playlistUrl, outFilename, ffmpegCmd string) error {
+	// TODO: unit test
+
 	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -f mpegts <outFilename>
 	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -acodec aac -r 60 -bsf:a aac_adtstoasc -f mpegts <outFilename>
 
