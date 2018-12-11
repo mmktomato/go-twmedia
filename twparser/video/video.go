@@ -108,7 +108,6 @@ func getAuthToken(attrs []html.Attribute) (string, error) {
 }
 
 func fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
-	// TODO: unit test
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
 	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
