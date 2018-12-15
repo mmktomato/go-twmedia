@@ -8,6 +8,8 @@ import (
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
+var svc = NewVideoServiceImpl(nil)
+
 func TestFindBiggestVideo(t *testing.T) {
 	small := &m3u8.Variant{URI: "/sample/small.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 10}}
 	medium := &m3u8.Variant{URI: "/sample/medium.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 20}}
@@ -22,7 +24,7 @@ func TestFindBiggestVideo(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		res := findBiggestVideo(tt.variants)
+		res := svc.findBiggestVideo(tt.variants)
 		if res != big {
 			t.Errorf("%d: big is not returned.", i)
 		}
@@ -45,7 +47,7 @@ func TestExtractAuthToken(t *testing.T) {
 		jsurl := "https://localhost/TwitterVideoPlayerIframe.js"
 		httpmock.RegisterResponder("GET", jsurl, httpmock.NewStringResponder(200, tt.jsresp))
 
-		token, err := extractAuthToken(jsurl)
+		token, err := svc.extractAuthToken(jsurl)
 		if token != tt.token {
 			t.Errorf("%d: unexpected token -> %s", i, token)
 			t.Errorf("%d: err -> %v", i, err)
@@ -67,7 +69,7 @@ func TestFetchTrackInfo(t *testing.T) {
 	resp := string(buf)
 	httpmock.RegisterResponder("GET", jsonUrl, httpmock.NewStringResponder(200, resp))
 
-	track, err := fetchTrackInfo(tweetId, "myAuthToken")
+	track, err := svc.fetchTrackInfo(tweetId, "myAuthToken")
 	if track.ContentId != "myContentId" {
 		t.Errorf("ContentId not match -> %v", track.ContentId)
 	}

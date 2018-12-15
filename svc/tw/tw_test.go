@@ -1,10 +1,12 @@
-package twparser
+package tw
 
 import (
 	"bytes"
 	"io/ioutil"
 	"testing"
 )
+
+var svc = NewTweetServiceImpl()
 
 func TestParseTweet(t *testing.T) {
 	tests := []struct {
@@ -47,7 +49,7 @@ func TestParseTweet(t *testing.T) {
 		}
 
 		r := bytes.NewReader(buf)
-		twMedia, err := ParseTweet(tt.tweetUrl, r)
+		twMedia, err := svc.ParseTweet(tt.tweetUrl, r)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,7 +90,7 @@ func TestGetImageFilename(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		res, err := getImageFilename(tt.url)
+		res, err := svc.getImageFilename(tt.url)
 		if tt.isErr && err == nil {
 			t.Errorf("%s: error not found", tt.url)
 		}
@@ -110,7 +112,7 @@ func TestGetTweetId(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		res := getTweetId(tt.url)
+		res := svc.getTweetId(tt.url)
 		if res != tt.expectedId {
 			t.Errorf("%s: id not match", tt.url)
 		}

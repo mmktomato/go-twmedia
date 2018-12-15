@@ -8,14 +8,14 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
-	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/grafov/m3u8"
-	"github.com/mmktomato/go-twmedia/twparser/domutil"
+	"github.com/mmktomato/go-twmedia/svc/extcmd"
 	"github.com/mmktomato/go-twmedia/util"
+	"github.com/mmktomato/go-twmedia/util/domutil"
 )
 
 var authRegex = regexp.MustCompile(`authorization:\s*['"]([^'"]+)['"]`)
@@ -24,13 +24,27 @@ type TrackInfo struct {
 	ContentId   string `json:"contentId"`
 	PlaylistUrl string `json:"playbackUrl"`
 }
+
 type videoConfig struct {
 	Track TrackInfo `json:"track"`
 }
 
+type VideoService interface {
+	ParseVideo(string, io.Reader) (*TrackInfo, error)
+	SavePlaylist(*TrackInfo) error
+}
+
+type VideoServiceImpl struct {
+	extcmdService extcmd.ExternalCmdService
+}
+
+func NewVideoServiceImpl(extcmdService extcmd.ExternalCmdService) *VideoServiceImpl {
+	return &VideoServiceImpl{extcmdService}
+}
+
 // ParseVideo returns *TrackInfo. It contains playlist url and content id.
 // Typically playlist url has `.m3u8` extension.
-func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
+func (svc *VideoServiceImpl) ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 	// TODO: write test code. needs mock for `Fetch` because video.GetAuthToken uses it.
 
 	err = domutil.Tokenize(r, func(token html.Token) (bool, error) {
@@ -39,12 +53,12 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 			fallthrough
 		case html.SelfClosingTagToken:
 			if token.Data == "script" {
-				authToken, err := getAuthToken(token.Attr)
+				authToken, err := svc.getAuthToken(token.Attr)
 				if err != nil {
 					return false, err
 				}
 				if authToken != "" {
-					ret, err = fetchTrackInfo(tweetId, authToken)
+					ret, err = svc.fetchTrackInfo(tweetId, authToken)
 
 					return false, err
 				}
@@ -55,7 +69,7 @@ func ParseVideo(tweetId string, r io.Reader) (ret *TrackInfo, err error) {
 	return ret, err
 }
 
-func SavePlaylist(track *TrackInfo) error {
+func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 	// TODO: unit test
 
 	// TODO: validate `track`. track.PlaylistUrl and track.ContentId.
@@ -76,7 +90,7 @@ func SavePlaylist(track *TrackInfo) error {
 		switch listType {
 		case m3u8.MEDIA:
 			outFilename := track.ContentId + ".mp4"
-			err = runFfmpeg(track.PlaylistUrl, outFilename, "ffmpeg")
+			err = svc.extcmdService.RunFfmpeg(track.PlaylistUrl, outFilename)
 			if err != nil {
 				return err
 			}
@@ -86,28 +100,28 @@ func SavePlaylist(track *TrackInfo) error {
 			if len(masterpl.Variants) < 1 {
 				return errors.New("No variants found")
 			}
-			variant := findBiggestVideo(masterpl.Variants)
+			variant := svc.findBiggestVideo(masterpl.Variants)
 			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI}
-			return SavePlaylist(nextTrack)
+			return svc.SavePlaylist(nextTrack)
 		}
 		return nil
 	})
 }
 
-func getAuthToken(attrs []html.Attribute) (string, error) {
-	jsurl, err := parseScriptAttr(attrs)
+func (svc *VideoServiceImpl) getAuthToken(attrs []html.Attribute) (string, error) {
+	jsurl, err := svc.parseScriptAttr(attrs)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := extractAuthToken(jsurl)
+	token, err := svc.extractAuthToken(jsurl)
 	if err != nil {
 		return "", err
 	}
 	return token, nil
 }
 
-func fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
+func (svc *VideoServiceImpl) fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
 	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
@@ -127,7 +141,7 @@ func fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	return ret, err
 }
 
-func parseScriptAttr(attrs []html.Attribute) (ret string, err error) {
+func (svc *VideoServiceImpl) parseScriptAttr(attrs []html.Attribute) (ret string, err error) {
 	err = domutil.FindAttr(attrs, "src", func(srcAttr html.Attribute) error {
 		if strings.Contains(srcAttr.Val, "TwitterVideoPlayerIframe") {
 			ret = srcAttr.Val
@@ -137,7 +151,7 @@ func parseScriptAttr(attrs []html.Attribute) (ret string, err error) {
 	return ret, err
 }
 
-func extractAuthToken(jsurl string) (ret string, err error) {
+func (svc *VideoServiceImpl) extractAuthToken(jsurl string) (ret string, err error) {
 	err = util.Fetch(jsurl, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
@@ -153,33 +167,10 @@ func extractAuthToken(jsurl string) (ret string, err error) {
 	return ret, err
 }
 
-func findBiggestVideo(variants []*m3u8.Variant) *m3u8.Variant {
+func (svc *VideoServiceImpl) findBiggestVideo(variants []*m3u8.Variant) *m3u8.Variant {
 	s := variants
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Bandwidth < s[j].Bandwidth
 	})
 	return s[len(s)-1]
-}
-
-func runFfmpeg(playlistUrl, outFilename, ffmpegCmd string) error {
-	// TODO: unit test
-
-	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -f mpegts <outFilename>
-	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -acodec aac -r 60 -bsf:a aac_adtstoasc -f mpegts <outFilename>
-
-	out, err := exec.Command(
-		ffmpegCmd, "-i", playlistUrl,
-		"-movflags", "faststart",
-		"-c", "copy",
-		"-f", "mpegts",
-		outFilename,
-	).CombinedOutput()
-	if err != nil {
-		return err
-	}
-
-	// TODO: hide ffmpeg's output to verbose log
-	fmt.Println(string(out))
-
-	return nil
 }

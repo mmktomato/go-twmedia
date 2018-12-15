@@ -1,4 +1,4 @@
-package twparser
+package tw
 
 import (
 	"errors"
@@ -8,24 +8,34 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mmktomato/go-twmedia/twparser/domutil"
+	"github.com/mmktomato/go-twmedia/util/domutil"
 )
 
-type TwMedia struct {
+type Tweet struct {
 	ImageUrls map[string]string // url : filename
 	VideoUrl  string
 	TweetId   string
 }
 
+type TweetService interface {
+	ParseTweet(string, io.Reader) (*Tweet, error)
+}
+
+type TweetServiceImpl struct{}
+
+func NewTweetServiceImpl() *TweetServiceImpl {
+	return &TweetServiceImpl{}
+}
+
 var tweetIdRegex = regexp.MustCompile(`^https://twitter.com/[^/]+/status/([^/]+)/?`)
 
-func ParseTweet(tweetUrl string, r io.Reader) (*TwMedia, error) {
-	tweetId := getTweetId(tweetUrl)
+func (svc *TweetServiceImpl) ParseTweet(tweetUrl string, r io.Reader) (*Tweet, error) {
+	tweetId := svc.getTweetId(tweetUrl)
 	if tweetId == "" {
 		return nil, errors.New("TweetId not found")
 	}
 
-	res := &TwMedia{
+	res := &Tweet{
 		ImageUrls: make(map[string]string),
 		VideoUrl:  "",
 		TweetId:   tweetId,
@@ -37,7 +47,7 @@ func ParseTweet(tweetUrl string, r io.Reader) (*TwMedia, error) {
 			fallthrough
 		case html.SelfClosingTagToken:
 			if token.Data == "meta" {
-				err := parseMetaAttr(token.Attr, res)
+				err := svc.parseMetaAttr(token.Attr, res)
 				if err != nil {
 					return false, err
 				}
@@ -53,31 +63,33 @@ func ParseTweet(tweetUrl string, r io.Reader) (*TwMedia, error) {
 	return res, err
 }
 
-func parseMetaAttr(attrs []html.Attribute, twMedia *TwMedia) error {
+func (svc *TweetServiceImpl) parseMetaAttr(attrs []html.Attribute, tweet *Tweet) error {
 	return domutil.FindAttr(attrs, "property", func(propAttr html.Attribute) error {
 		return domutil.FindAttr(attrs, "content", func(contentAttr html.Attribute) error {
 			switch propAttr.Val {
 			case "og:image":
-				if isTargetImage(contentAttr.Val) {
-					filename, err := getImageFilename(contentAttr.Val)
+				if svc.isTargetImage(contentAttr.Val) {
+					filename, err := svc.getImageFilename(contentAttr.Val)
 					if err != nil {
 						return err
 					}
-					twMedia.ImageUrls[contentAttr.Val] = filename
+					tweet.ImageUrls[contentAttr.Val] = filename
 				}
 			case "og:video:url":
-				twMedia.VideoUrl = contentAttr.Val
+				tweet.VideoUrl = contentAttr.Val
 			}
 			return nil
 		})
 	})
 }
 
-func isTargetImage(url string) bool {
+func (svc *TweetServiceImpl) isTargetImage(url string) bool {
+	// TODO: move to svc/image
 	return strings.HasSuffix(url, ":large")
 }
 
-func getImageFilename(url string) (string, error) {
+func (svc *TweetServiceImpl) getImageFilename(url string) (string, error) {
+	// TODO: move to svc/image
 	u, err := neturl.Parse(url)
 	if err != nil {
 		return "", err
@@ -88,7 +100,7 @@ func getImageFilename(url string) (string, error) {
 	return strings.Split(ret, ":")[0], nil // foo.jpg:large
 }
 
-func getTweetId(url string) string {
+func (svc *TweetServiceImpl) getTweetId(url string) string {
 	found := tweetIdRegex.FindStringSubmatch(url)
 	if 1 < len(found) {
 		return found[1]
