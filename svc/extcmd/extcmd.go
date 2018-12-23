@@ -16,8 +16,6 @@ func NewExternalCmdServiceImpl() *ExternalCmdServiceImpl {
 }
 
 func (svc *ExternalCmdServiceImpl) RunFfmpeg(playlistUrl, outFilename string) error {
-	// TODO: unit test
-
 	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -f mpegts <outFilename>
 	// ffmpeg -i <playlistUrl> -movflags faststart -c copy -acodec aac -r 60 -bsf:a aac_adtstoasc -f mpegts <outFilename>
 

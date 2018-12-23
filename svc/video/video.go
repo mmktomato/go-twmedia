@@ -70,8 +70,6 @@ func (svc *VideoServiceImpl) ParseVideo(tweetId string, r io.Reader) (ret *Track
 }
 
 func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
-	// TODO: unit test
-
 	// TODO: validate `track`. track.PlaylistUrl and track.ContentId.
 	// move the validation to `fetchTrackInfo` func.
 	u, err := url.Parse(track.PlaylistUrl)

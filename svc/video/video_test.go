@@ -4,13 +4,25 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/grafov/m3u8"
+	mock_extcmd "github.com/mmktomato/go-twmedia/svc/extcmd/_mock"
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
-var svc = NewVideoServiceImpl(nil)
+func newVideoServiceImplForTest(t *testing.T, cb func(*VideoServiceImpl, *mock_extcmd.MockExternalCmdService)) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mock := mock_extcmd.NewMockExternalCmdService(mockCtrl)
+	svc := NewVideoServiceImpl(mock)
+
+	cb(svc, mock)
+}
 
 func TestFindBiggestVideo(t *testing.T) {
+	svc := NewVideoServiceImpl(nil)
+
 	small := &m3u8.Variant{URI: "/sample/small.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 10}}
 	medium := &m3u8.Variant{URI: "/sample/medium.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 20}}
 	big := &m3u8.Variant{URI: "/sample/big.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 30}}
@@ -32,6 +44,8 @@ func TestFindBiggestVideo(t *testing.T) {
 }
 
 func TestExtractAuthToken(t *testing.T) {
+	svc := NewVideoServiceImpl(nil)
+
 	tests := []struct {
 		jsresp, token string
 	}{
@@ -56,6 +70,8 @@ func TestExtractAuthToken(t *testing.T) {
 }
 
 func TestFetchTrackInfo(t *testing.T) {
+	svc := NewVideoServiceImpl(nil)
+
 	httpmock.Activate()
 	defer httpmock.Deactivate()
 
@@ -76,4 +92,34 @@ func TestFetchTrackInfo(t *testing.T) {
 	if track.PlaylistUrl != "https://example.com/myvideo.m3u8" {
 		t.Errorf("PlaylistUrl not match -> %v", track.PlaylistUrl)
 	}
+}
+
+func TestSavePlaylist(t *testing.T) {
+	newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, mockExtCmdService *mock_extcmd.MockExternalCmdService) {
+		mockExtCmdService.EXPECT().RunFfmpeg(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+		trackInfo := &TrackInfo{"dummyContentId", "http://localhost/master_playlist.m3u8"}
+
+		httpmock.Activate()
+		defer httpmock.Deactivate()
+
+		masterPlBuf, err := ioutil.ReadFile("testdata/master_playlist.m3u8")
+		if err != nil {
+			t.Fatal(err)
+		}
+		mediaPlBuf, err := ioutil.ReadFile("testdata/media_playlist.m3u8")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		httpmock.RegisterResponder(
+			"GET", "http://localhost/master_playlist.m3u8", httpmock.NewStringResponder(200, string(masterPlBuf)))
+		httpmock.RegisterResponder(
+			"GET", "http://localhost/media_playlist.m3u8", httpmock.NewStringResponder(200, string(mediaPlBuf)))
+
+		err = svc.SavePlaylist(trackInfo)
+		if err != nil {
+			t.Error(nil)
+		}
+	})
 }
