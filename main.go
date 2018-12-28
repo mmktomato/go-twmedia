@@ -86,6 +86,8 @@ func main() {
 			continue
 		}
 
+		opts.Headers["Referer"] = v
+
 		err := httpClient.Fetch(v, func(r io.Reader) error {
 			return onTweetFetched(v, r)
 		})
