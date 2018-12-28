@@ -3,7 +3,6 @@ package util
 import (
 	"io"
 	"net/http"
-	neturl "net/url"
 )
 
 type HttpClient struct {
@@ -20,14 +19,7 @@ func (c *HttpClient) FetchWithHeader(url string, headers map[string]string, fn f
 		return err
 	}
 
-	u, err := neturl.Parse(url)
-	if err != nil {
-		return err
-	}
-
-	if u.Host == "twitter.com" {
-		c.addHeaders(req, c.DefaultHeaders)
-	}
+	c.addHeaders(req, c.DefaultHeaders)
 	c.addHeaders(req, headers)
 
 	client := &http.Client{}
