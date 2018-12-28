@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/grafov/m3u8"
 	mock_extcmd "github.com/mmktomato/go-twmedia/svc/extcmd/_mock"
+	"github.com/mmktomato/go-twmedia/util"
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
@@ -15,14 +16,12 @@ func newVideoServiceImplForTest(t *testing.T, cb func(*VideoServiceImpl, *mock_e
 	defer mockCtrl.Finish()
 
 	mock := mock_extcmd.NewMockExternalCmdService(mockCtrl)
-	svc := NewVideoServiceImpl(mock)
+	svc := NewVideoServiceImpl(mock, &util.HttpClient{})
 
 	cb(svc, mock)
 }
 
 func TestFindBiggestVideo(t *testing.T) {
-	svc := NewVideoServiceImpl(nil)
-
 	small := &m3u8.Variant{URI: "/sample/small.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 10}}
 	medium := &m3u8.Variant{URI: "/sample/medium.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 20}}
 	big := &m3u8.Variant{URI: "/sample/big.m3u8", VariantParams: m3u8.VariantParams{Bandwidth: 30}}
@@ -36,16 +35,16 @@ func TestFindBiggestVideo(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		res := svc.findBiggestVideo(tt.variants)
-		if res != big {
-			t.Errorf("%d: big is not returned.", i)
-		}
+		newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, _ *mock_extcmd.MockExternalCmdService) {
+			res := svc.findBiggestVideo(tt.variants)
+			if res != big {
+				t.Errorf("%d: big is not returned.", i)
+			}
+		})
 	}
 }
 
 func TestExtractAuthToken(t *testing.T) {
-	svc := NewVideoServiceImpl(nil)
-
 	tests := []struct {
 		jsresp, token string
 	}{
@@ -55,43 +54,45 @@ func TestExtractAuthToken(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		httpmock.Activate()
-		defer httpmock.Deactivate()
+		newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, _ *mock_extcmd.MockExternalCmdService) {
+			httpmock.Activate()
+			defer httpmock.Deactivate()
 
-		jsurl := "https://localhost/TwitterVideoPlayerIframe.js"
-		httpmock.RegisterResponder("GET", jsurl, httpmock.NewStringResponder(200, tt.jsresp))
+			jsurl := "https://localhost/TwitterVideoPlayerIframe.js"
+			httpmock.RegisterResponder("GET", jsurl, httpmock.NewStringResponder(200, tt.jsresp))
 
-		token, err := svc.extractAuthToken(jsurl)
-		if token != tt.token {
-			t.Errorf("%d: unexpected token -> %s", i, token)
-			t.Errorf("%d: err -> %v", i, err)
-		}
+			token, err := svc.extractAuthToken(jsurl)
+			if token != tt.token {
+				t.Errorf("%d: unexpected token -> %s", i, token)
+				t.Errorf("%d: err -> %v", i, err)
+			}
+		})
 	}
 }
 
 func TestFetchTrackInfo(t *testing.T) {
-	svc := NewVideoServiceImpl(nil)
+	newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, _ *mock_extcmd.MockExternalCmdService) {
+		httpmock.Activate()
+		defer httpmock.Deactivate()
 
-	httpmock.Activate()
-	defer httpmock.Deactivate()
+		buf, err := ioutil.ReadFile("testdata/trackinfo.json")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	buf, err := ioutil.ReadFile("testdata/trackinfo.json")
-	if err != nil {
-		t.Fatal(err)
-	}
+		tweetId := "myTweetId"
+		jsonUrl := "https://api.twitter.com/1.1/videos/tweet/config/myTweetId.json"
+		resp := string(buf)
+		httpmock.RegisterResponder("GET", jsonUrl, httpmock.NewStringResponder(200, resp))
 
-	tweetId := "myTweetId"
-	jsonUrl := "https://api.twitter.com/1.1/videos/tweet/config/myTweetId.json"
-	resp := string(buf)
-	httpmock.RegisterResponder("GET", jsonUrl, httpmock.NewStringResponder(200, resp))
-
-	track, err := svc.fetchTrackInfo(tweetId, "myAuthToken")
-	if track.ContentId != "myContentId" {
-		t.Errorf("ContentId not match -> %v", track.ContentId)
-	}
-	if track.PlaylistUrl != "https://example.com/myvideo.m3u8" {
-		t.Errorf("PlaylistUrl not match -> %v", track.PlaylistUrl)
-	}
+		track, err := svc.fetchTrackInfo(tweetId, "myAuthToken")
+		if track.ContentId != "myContentId" {
+			t.Errorf("ContentId not match -> %v", track.ContentId)
+		}
+		if track.PlaylistUrl != "https://example.com/myvideo.m3u8" {
+			t.Errorf("PlaylistUrl not match -> %v", track.PlaylistUrl)
+		}
+	})
 }
 
 func TestSavePlaylist(t *testing.T) {

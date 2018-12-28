@@ -2,12 +2,28 @@
 
 
 [[projects]]
+  digest = "1:b60efdeb75d3c0ceed88783ac2495256aba3491a537d0f31401202579fd62a94"
+  name = "github.com/golang/mock"
+  packages = ["gomock"]
+  pruneopts = "UT"
+  revision = "51421b967af1f557f93a59e0057aaf15ca02e29c"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:f89f3aa237e1394f3d958bd5aae0bf2864768490f7a6763bacb2bf85001419d0"
   name = "github.com/grafov/m3u8"
   packages = ["."]
   pruneopts = "UT"
   revision = "0b86a8a8eaf300b6dfaf5a7a32b6e0b86f094621"
   version = "v0.10"
+
+[[projects]]
+  digest = "1:a2cff208d4759f6ba1b1cd228587b0a1869f95f22542ec9cd17fff64430113c7"
+  name = "github.com/jessevdk/go-flags"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -32,7 +48,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/golang/mock/gomock",
     "github.com/grafov/m3u8",
+    "github.com/jessevdk/go-flags",
     "golang.org/x/net/html",
     "gopkg.in/jarcoal/httpmock.v1",
   ]

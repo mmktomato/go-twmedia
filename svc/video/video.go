@@ -36,10 +36,11 @@ type VideoService interface {
 
 type VideoServiceImpl struct {
 	extcmdService extcmd.ExternalCmdService
+	httpClient    *util.HttpClient
 }
 
-func NewVideoServiceImpl(extcmdService extcmd.ExternalCmdService) *VideoServiceImpl {
-	return &VideoServiceImpl{extcmdService}
+func NewVideoServiceImpl(extcmdService extcmd.ExternalCmdService, httpClient *util.HttpClient) *VideoServiceImpl {
+	return &VideoServiceImpl{extcmdService, httpClient}
 }
 
 // ParseVideo returns *TrackInfo. It contains playlist url and content id.
@@ -79,7 +80,7 @@ func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 
 	baseUrl := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 
-	return util.Fetch(track.PlaylistUrl, func(r io.Reader) error {
+	return svc.httpClient.Fetch(track.PlaylistUrl, func(r io.Reader) error {
 		playlist, listType, err := m3u8.DecodeFrom(r, true)
 		if err != nil {
 			return err
@@ -122,7 +123,7 @@ func (svc *VideoServiceImpl) getAuthToken(attrs []html.Attribute) (string, error
 func (svc *VideoServiceImpl) fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
-	err := util.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
+	err := svc.httpClient.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
 			return err
@@ -150,7 +151,7 @@ func (svc *VideoServiceImpl) parseScriptAttr(attrs []html.Attribute) (ret string
 }
 
 func (svc *VideoServiceImpl) extractAuthToken(jsurl string) (ret string, err error) {
-	err = util.Fetch(jsurl, func(r io.Reader) error {
+	err = svc.httpClient.Fetch(jsurl, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
 			return err
