@@ -37,3 +37,10 @@ func (c *HttpClient) addHeaders(req *http.Request, headers map[string]string) {
 		req.Header.Set(k, v)
 	}
 }
+
+func (c *HttpClient) FindHeader(key string) (string, bool) {
+	if value, ok := c.DefaultHeaders[key]; ok {
+		return value, true
+	}
+	return "", false
+}

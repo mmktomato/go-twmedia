@@ -123,7 +123,15 @@ func (svc *VideoServiceImpl) getAuthToken(attrs []html.Attribute) (string, error
 func (svc *VideoServiceImpl) fetchTrackInfo(tweetId, authToken string) (*TrackInfo, error) {
 	url := fmt.Sprintf("https://api.twitter.com/1.1/videos/tweet/config/%s.json", tweetId)
 	var ret *TrackInfo = nil
-	err := svc.httpClient.FetchWithHeader(url, map[string]string{"authorization": authToken}, func(r io.Reader) error {
+	headers := map[string]string{"authorization": authToken}
+
+	if cookie := svc.findCookie(); cookie != "" {
+		if csrfToken := svc.findCsrfTokenFromCookie(cookie); csrfToken != "" {
+			headers["x-csrf-token"] = csrfToken
+		}
+	}
+
+	err := svc.httpClient.FetchWithHeader(url, headers, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
 			return err
@@ -172,4 +180,25 @@ func (svc *VideoServiceImpl) findBiggestVideo(variants []*m3u8.Variant) *m3u8.Va
 		return s[i].Bandwidth < s[j].Bandwidth
 	})
 	return s[len(s)-1]
+}
+
+func (svc *VideoServiceImpl) findCsrfTokenFromCookie(cookie string) string {
+	pairs := strings.Split(cookie, ";")
+	for _, pair := range pairs {
+		s := strings.TrimSpace(pair)
+		if strings.HasPrefix(s, "ct0=") {
+			return strings.Split(s, "=")[1]
+		}
+	}
+	return ""
+}
+
+func (svc *VideoServiceImpl) findCookie() string {
+	arr := []string{"cookie", "Cookie", "COOKIE"}
+	for _, el := range arr {
+		if cookie, ok := svc.httpClient.FindHeader(el); ok {
+			return cookie
+		}
+	}
+	return ""
 }

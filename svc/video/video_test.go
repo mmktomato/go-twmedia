@@ -124,3 +124,21 @@ func TestSavePlaylist(t *testing.T) {
 		}
 	})
 }
+
+func TestFindCsrfTokenFromCookie(t *testing.T) {
+	tests := []struct {
+		cookie, csrfToken string
+	}{
+		{"foo=FOO; ct0=mytoken; bar=BAR", "mytoken"},
+		{"foo=FOO; bar=BAR", ""},
+	}
+
+	for i, tt := range tests {
+		newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, _ *mock_extcmd.MockExternalCmdService) {
+			res := svc.findCsrfTokenFromCookie(tt.cookie)
+			if res != tt.csrfToken {
+				t.Errorf("%d: csrfToken not match", i)
+			}
+		})
+	}
+}
