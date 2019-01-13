@@ -37,10 +37,15 @@ type VideoService interface {
 type VideoServiceImpl struct {
 	extcmdService extcmd.ExternalCmdService
 	httpClient    *util.HttpClient
+	logger        *util.TinyLogger
 }
 
-func NewVideoServiceImpl(extcmdService extcmd.ExternalCmdService, httpClient *util.HttpClient) *VideoServiceImpl {
-	return &VideoServiceImpl{extcmdService, httpClient}
+func NewVideoServiceImpl(
+	extcmdService extcmd.ExternalCmdService,
+	httpClient *util.HttpClient,
+	logger *util.TinyLogger,
+) *VideoServiceImpl {
+	return &VideoServiceImpl{extcmdService, httpClient, logger}
 }
 
 // ParseVideo returns *TrackInfo. It contains playlist url and content id.
@@ -89,6 +94,7 @@ func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 		switch listType {
 		case m3u8.MEDIA:
 			outFilename := track.ContentId + ".mp4"
+			svc.logger.Verbosef("%s -> %s\n", track.PlaylistUrl, outFilename)
 			err = svc.extcmdService.RunFfmpeg(track.PlaylistUrl, outFilename)
 			if err != nil {
 				return err
@@ -100,6 +106,7 @@ func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 				return errors.New("No variants found")
 			}
 			variant := svc.findBiggestVideo(masterpl.Variants)
+			svc.logger.Verbosef("biggest video's playlist: %s\n", variant.URI)
 			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI}
 			return svc.SavePlaylist(nextTrack)
 		}
@@ -130,6 +137,7 @@ func (svc *VideoServiceImpl) fetchTrackInfo(tweetId, authToken string) (*TrackIn
 			headers["x-csrf-token"] = csrfToken
 		}
 	}
+	svc.logger.Verbosef("additional headers: %v\n", headers)
 
 	err := svc.httpClient.FetchWithHeader(url, headers, func(r io.Reader) error {
 		buf, err := ioutil.ReadAll(r)
@@ -167,6 +175,10 @@ func (svc *VideoServiceImpl) extractAuthToken(jsurl string) (ret string, err err
 
 		found := authRegex.FindSubmatch(buf)
 		if 1 < len(found) {
+			for i := range found[1:] {
+				index := i + 1
+				svc.logger.Verbosef("authRegex found[%d]: %v\n", index, string(found[index]))
+			}
 			ret = string(found[1])
 		}
 		return nil

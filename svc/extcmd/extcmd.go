@@ -1,18 +1,21 @@
 package extcmd
 
 import (
-	"fmt"
 	"os/exec"
+
+	"github.com/mmktomato/go-twmedia/util"
 )
 
 type ExternalCmdService interface {
 	RunFfmpeg(string, string) error
 }
 
-type ExternalCmdServiceImpl struct{}
+type ExternalCmdServiceImpl struct {
+	logger *util.TinyLogger
+}
 
-func NewExternalCmdServiceImpl() *ExternalCmdServiceImpl {
-	return &ExternalCmdServiceImpl{}
+func NewExternalCmdServiceImpl(logger *util.TinyLogger) *ExternalCmdServiceImpl {
+	return &ExternalCmdServiceImpl{logger}
 }
 
 func (svc *ExternalCmdServiceImpl) RunFfmpeg(playlistUrl, outFilename string) error {
@@ -30,8 +33,7 @@ func (svc *ExternalCmdServiceImpl) RunFfmpeg(playlistUrl, outFilename string) er
 		return err
 	}
 
-	// TODO: hide ffmpeg's output to verbose log
-	fmt.Println(string(out))
+	svc.logger.Verboseln(string(out))
 
 	return nil
 }

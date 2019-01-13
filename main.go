@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -13,12 +12,23 @@ import (
 )
 
 var httpClient util.HttpClient
+var logger *util.TinyLogger
 
-var tweetService tw.TweetService = tw.NewTweetServiceImpl()
+var tweetService tw.TweetService
 var videoService video.VideoService
 
 type Opts struct {
-	Headers map[string]string `short:"H" long:"header" description:"HTTP header"` // same as curl's one.
+	Headers    map[string]string `short:"H" long:"header" description:"HTTP header"` // same as curl's one.
+	VerboseLog []bool            `short:"v" long:"verbose" description:"verbose log"`
+}
+
+func initServices(opts *Opts) {
+	httpClient = util.HttpClient{opts.Headers}
+	logger = util.NewTinyLogger(0 < len(opts.VerboseLog))
+	extcmdService := extcmd.NewExternalCmdServiceImpl(logger)
+
+	videoService = video.NewVideoServiceImpl(extcmdService, &httpClient, logger)
+	tweetService = tw.NewTweetServiceImpl(logger)
 }
 
 func onTweetFetched(tweetUrl string, r io.Reader) error {
@@ -33,9 +43,9 @@ func onTweetFetched(tweetUrl string, r io.Reader) error {
 			return util.Save(filename, r)
 		})
 		if err == nil {
-			fmt.Println(filename)
+			logger.Writeln(filename)
 		} else {
-			fmt.Printf("%s : %v\n", url, err)
+			logger.Writef("%s : %v\n", url, err)
 		}
 	}
 
@@ -47,6 +57,7 @@ func onTweetFetched(tweetUrl string, r io.Reader) error {
 				return err
 			}
 
+			logger.Verbosef("track info: %v\n", trackInfo)
 			return videoService.SavePlaylist(trackInfo)
 		})
 		if err != nil {
@@ -78,13 +89,13 @@ func main() {
 		panic(err)
 	}
 
-	httpClient = util.HttpClient{opts.Headers}
-	videoService = video.NewVideoServiceImpl(extcmd.NewExternalCmdServiceImpl(), &httpClient)
+	initServices(opts)
 
 	for _, v := range args {
 		if strings.HasPrefix(v, "-") { // unknown option
 			continue
 		}
+		logger.Verbosef("Try: %s\n", v)
 
 		opts.Headers["Referer"] = v
 
@@ -92,7 +103,7 @@ func main() {
 			return onTweetFetched(v, r)
 		})
 		if err != nil {
-			fmt.Printf("%s : %v\n", v, err)
+			logger.Writef("%s : %v\n", v, err)
 		}
 	}
 }

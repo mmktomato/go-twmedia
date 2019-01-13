@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/mmktomato/go-twmedia/util"
 	"github.com/mmktomato/go-twmedia/util/domutil"
 )
 
@@ -21,10 +22,12 @@ type TweetService interface {
 	ParseTweet(string, io.Reader) (*Tweet, error)
 }
 
-type TweetServiceImpl struct{}
+type TweetServiceImpl struct {
+	logger *util.TinyLogger
+}
 
-func NewTweetServiceImpl() *TweetServiceImpl {
-	return &TweetServiceImpl{}
+func NewTweetServiceImpl(logger *util.TinyLogger) *TweetServiceImpl {
+	return &TweetServiceImpl{logger}
 }
 
 var tweetIdRegex = regexp.MustCompile(`^https://twitter.com/[^/]+/status/([^/]+)/?`)
@@ -74,6 +77,9 @@ func (svc *TweetServiceImpl) parseMetaAttr(attrs []html.Attribute, tweet *Tweet)
 						return err
 					}
 					tweet.ImageUrls[contentAttr.Val] = filename
+					svc.logger.Verbosef("%s -> %s\n", contentAttr.Val, filename)
+				} else {
+					svc.logger.Verbosef("%s is not a target image\n", contentAttr.Val)
 				}
 			case "og:video:url":
 				tweet.VideoUrl = contentAttr.Val
@@ -103,6 +109,10 @@ func (svc *TweetServiceImpl) getImageFilename(url string) (string, error) {
 func (svc *TweetServiceImpl) getTweetId(url string) string {
 	found := tweetIdRegex.FindStringSubmatch(url)
 	if 1 < len(found) {
+		for i := range found[1:] {
+			index := i + 1
+			svc.logger.Verbosef("tweetIdRegex found[%d]: %v\n", index, found[index])
+		}
 		return found[1]
 	}
 	return ""

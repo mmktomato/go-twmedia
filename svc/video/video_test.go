@@ -16,7 +16,7 @@ func newVideoServiceImplForTest(t *testing.T, cb func(*VideoServiceImpl, *mock_e
 	defer mockCtrl.Finish()
 
 	mock := mock_extcmd.NewMockExternalCmdService(mockCtrl)
-	svc := NewVideoServiceImpl(mock, &util.HttpClient{})
+	svc := NewVideoServiceImpl(mock, &util.HttpClient{}, util.NewTinyLogger(false))
 
 	cb(svc, mock)
 }

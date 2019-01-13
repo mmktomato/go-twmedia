@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"io/ioutil"
 	"testing"
+
+	"github.com/mmktomato/go-twmedia/util"
 )
 
-var svc = NewTweetServiceImpl()
+var svc = NewTweetServiceImpl(util.NewTinyLogger(false))
 
 func TestParseTweet(t *testing.T) {
 	tests := []struct {
