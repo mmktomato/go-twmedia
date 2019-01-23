@@ -21,8 +21,9 @@ import (
 var authRegex = regexp.MustCompile(`authorization:\s*['"]([^'"]+)['"]`)
 
 type TrackInfo struct {
-	ContentId   string `json:"contentId"`
-	PlaylistUrl string `json:"playbackUrl"`
+	ContentId    string `json:"contentId"`
+	PlaylistUrl  string `json:"playbackUrl"`
+	PlaybackType string `json:"playbackType"`
 }
 
 type videoConfig struct {
@@ -99,7 +100,7 @@ func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(outFilename)
+			svc.logger.Writef("%s (%s)\n", outFilename, track.PlaybackType)
 		case m3u8.MASTER:
 			masterpl := playlist.(*m3u8.MasterPlaylist)
 			if len(masterpl.Variants) < 1 {
@@ -107,7 +108,7 @@ func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
 			}
 			variant := svc.findBiggestVideo(masterpl.Variants)
 			svc.logger.Verbosef("biggest video's playlist: %s\n", variant.URI)
-			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI}
+			nextTrack := &TrackInfo{track.ContentId, baseUrl + variant.URI, track.PlaybackType}
 			return svc.SavePlaylist(nextTrack)
 		}
 		return nil

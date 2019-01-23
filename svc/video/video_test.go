@@ -92,6 +92,9 @@ func TestFetchTrackInfo(t *testing.T) {
 		if track.PlaylistUrl != "https://example.com/myvideo.m3u8" {
 			t.Errorf("PlaylistUrl not match -> %v", track.PlaylistUrl)
 		}
+		if track.PlaybackType != "application/x-mpegURL" {
+			t.Errorf("PlaybackType not match -> %v", track.PlaybackType)
+		}
 	})
 }
 
@@ -99,7 +102,7 @@ func TestSavePlaylist(t *testing.T) {
 	newVideoServiceImplForTest(t, func(svc *VideoServiceImpl, mockExtCmdService *mock_extcmd.MockExternalCmdService) {
 		mockExtCmdService.EXPECT().RunFfmpeg(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-		trackInfo := &TrackInfo{"dummyContentId", "http://localhost/master_playlist.m3u8"}
+		trackInfo := &TrackInfo{"dummyContentId", "http://localhost/master_playlist.m3u8", "application/x-mpegURL"}
 
 		httpmock.Activate()
 		defer httpmock.Deactivate()
