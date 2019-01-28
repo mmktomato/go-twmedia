@@ -4,10 +4,9 @@ import (
 	"errors"
 	"golang.org/x/net/html"
 	"io"
-	neturl "net/url"
 	"regexp"
-	"strings"
 
+	"github.com/mmktomato/go-twmedia/svc/image"
 	"github.com/mmktomato/go-twmedia/util"
 	"github.com/mmktomato/go-twmedia/util/domutil"
 )
@@ -23,11 +22,12 @@ type TweetService interface {
 }
 
 type TweetServiceImpl struct {
-	logger *util.TinyLogger
+	imageService image.ImageService
+	logger       *util.TinyLogger
 }
 
-func NewTweetServiceImpl(logger *util.TinyLogger) *TweetServiceImpl {
-	return &TweetServiceImpl{logger}
+func NewTweetServiceImpl(imageService image.ImageService, logger *util.TinyLogger) *TweetServiceImpl {
+	return &TweetServiceImpl{imageService, logger}
 }
 
 var tweetIdRegex = regexp.MustCompile(`^https://twitter.com/[^/]+/status/([^/]+)/?`)
@@ -71,8 +71,8 @@ func (svc *TweetServiceImpl) parseMetaAttr(attrs []html.Attribute, tweet *Tweet)
 		return domutil.FindAttr(attrs, "content", func(contentAttr html.Attribute) error {
 			switch propAttr.Val {
 			case "og:image":
-				if svc.isTargetImage(contentAttr.Val) {
-					filename, err := svc.getImageFilename(contentAttr.Val)
+				if svc.imageService.IsTargetImage(contentAttr.Val) {
+					filename, err := svc.imageService.GetImageFilename(contentAttr.Val)
 					if err != nil {
 						return err
 					}
@@ -87,23 +87,6 @@ func (svc *TweetServiceImpl) parseMetaAttr(attrs []html.Attribute, tweet *Tweet)
 			return nil
 		})
 	})
-}
-
-func (svc *TweetServiceImpl) isTargetImage(url string) bool {
-	// TODO: move to svc/image
-	return strings.HasSuffix(url, ":large")
-}
-
-func (svc *TweetServiceImpl) getImageFilename(url string) (string, error) {
-	// TODO: move to svc/image
-	u, err := neturl.Parse(url)
-	if err != nil {
-		return "", err
-	}
-
-	tokens := strings.Split(u.Path, "/")
-	ret := tokens[len(tokens)-1]
-	return strings.Split(ret, ":")[0], nil // foo.jpg:large
 }
 
 func (svc *TweetServiceImpl) getTweetId(url string) string {

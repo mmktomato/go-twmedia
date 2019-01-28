@@ -6,6 +6,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mmktomato/go-twmedia/svc/extcmd"
+	"github.com/mmktomato/go-twmedia/svc/image"
 	"github.com/mmktomato/go-twmedia/svc/tw"
 	"github.com/mmktomato/go-twmedia/svc/video"
 	"github.com/mmktomato/go-twmedia/util"
@@ -26,9 +27,10 @@ func initServices(opts *Opts) {
 	httpClient = util.HttpClient{opts.Headers}
 	logger = util.NewTinyLogger(0 < len(opts.VerboseLog))
 	extcmdService := extcmd.NewExternalCmdServiceImpl(logger)
+	imageService := image.NewImageServiceImpl(logger)
 
 	videoService = video.NewVideoServiceImpl(extcmdService, &httpClient, logger)
-	tweetService = tw.NewTweetServiceImpl(logger)
+	tweetService = tw.NewTweetServiceImpl(imageService, logger)
 }
 
 func onTweetFetched(tweetUrl string, r io.Reader) error {

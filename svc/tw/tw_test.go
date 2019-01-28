@@ -5,10 +5,14 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/mmktomato/go-twmedia/svc/image"
 	"github.com/mmktomato/go-twmedia/util"
 )
 
-var svc = NewTweetServiceImpl(util.NewTinyLogger(false))
+var (
+	logger = util.NewTinyLogger(false)
+	svc    = NewTweetServiceImpl(image.NewImageServiceImpl(logger), logger)
+)
 
 func TestParseTweet(t *testing.T) {
 	tests := []struct {
@@ -78,29 +82,6 @@ func TestParseTweet(t *testing.T) {
 		// TweetId
 		if twMedia.TweetId != tt.tweetId {
 			t.Errorf("%s: tweetId not match", tt.testfile)
-		}
-	}
-}
-
-func TestGetImageFilename(t *testing.T) {
-	tests := []struct {
-		url, filename string
-		isErr         bool
-	}{
-		{"http://example.com/image1.jpg:large", "image1.jpg", false},
-		{"://example.com/image1.jpg:large", "", true},
-	}
-
-	for _, tt := range tests {
-		res, err := svc.getImageFilename(tt.url)
-		if tt.isErr && err == nil {
-			t.Errorf("%s: error not found", tt.url)
-		}
-		if !tt.isErr && err != nil {
-			t.Errorf("%s: error occured", tt.url)
-		}
-		if tt.filename != res {
-			t.Errorf("%s: filename not match", tt.url)
 		}
 	}
 }
