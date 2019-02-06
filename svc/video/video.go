@@ -20,16 +20,6 @@ import (
 
 var authRegex = regexp.MustCompile(`authorization:\s*['"]([^'"]+)['"]`)
 
-type TrackInfo struct {
-	ContentId    string `json:"contentId"`
-	PlaylistUrl  string `json:"playbackUrl"`
-	PlaybackType string `json:"playbackType"`
-}
-
-type videoConfig struct {
-	Track TrackInfo `json:"track"`
-}
-
 type VideoService interface {
 	ParseVideo(string, io.Reader) (*TrackInfo, error)
 	SavePlaylist(*TrackInfo) error
@@ -77,8 +67,6 @@ func (svc *VideoServiceImpl) ParseVideo(tweetId string, r io.Reader) (ret *Track
 }
 
 func (svc *VideoServiceImpl) SavePlaylist(track *TrackInfo) error {
-	// TODO: validate `track`. track.PlaylistUrl and track.ContentId.
-	// move the validation to `fetchTrackInfo` func.
 	u, err := url.Parse(track.PlaylistUrl)
 	if err != nil {
 		return err
@@ -146,9 +134,14 @@ func (svc *VideoServiceImpl) fetchTrackInfo(tweetId, authToken string) (*TrackIn
 			return err
 		}
 
-		var vconf videoConfig
+		var vconf VideoConfig
 		if err = json.Unmarshal(buf, &vconf); err != nil {
 			return err
+		}
+
+		svc.logger.Verboseln(vconf.Track)
+		if !vconf.Track.Validate() {
+			return errors.New("vconf.Track is invalid.")
 		}
 
 		ret = &vconf.Track
