@@ -3,13 +3,13 @@ My practice of Golang
 
 ```bash
 $ make
-$ bin/twmedia <URL>
+$ bin/twmedia [URL]
 
 # or
-$ go run main.go <URL>
+$ go run main.go [URL]
 
 # or
-$ docker run --rm -v $PWD:/mnt mmktomato/go-twmedia:latest <URL>
+$ docker run --rm -v $PWD:/mnt mmktomato/go-twmedia:latest [URL]
 ```
 
 ## options
@@ -17,12 +17,12 @@ $ docker run --rm -v $PWD:/mnt mmktomato/go-twmedia:latest <URL>
 Same as curl's one.
 
 ```bash
-$ go run main.go <URL> -H "Referer: http://localhost"
+$ go run main.go [URL] -H "Referer: http://localhost"
 ```
 
 ### -v, --verbose
 Shows verbose log.
 
 ```bash
-$ go run main.go <URL> -v
+$ go run main.go [URL] -v
 ```
