@@ -35,4 +35,4 @@ $ go run main.go [URL] -v
 
 ### Build
 * go 1.12 or higher
-* gomock (https://github.com/golang/mock)[https://github.com/golang/mock]
+* gomock [https://github.com/golang/mock](https://github.com/golang/mock)
