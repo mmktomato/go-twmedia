@@ -1,4 +1,4 @@
-FROM golang:1.11.2-alpine3.8 as builder
+FROM golang:1.12-alpine3.10 as builder
 
 # ENV GOPATH /go
 WORKDIR $GOPATH/src/github.com/mmktomato/go-twmedia
@@ -13,7 +13,7 @@ RUN apk update \
 
 ###################
 
-FROM alpine:3.8
+FROM alpine:3.10
 
 WORKDIR /mnt
 

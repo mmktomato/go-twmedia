@@ -1,6 +1,8 @@
 # go-twmedia
 My practice of Golang
 
+
+## Usage
 ```bash
 $ make
 $ bin/twmedia [URL]
@@ -12,7 +14,7 @@ $ go run main.go [URL]
 $ docker run --rm -v $PWD:/mnt mmktomato/go-twmedia:latest [URL]
 ```
 
-## options
+## Sptions
 ### -H, --header
 Same as curl's one.
 
@@ -26,3 +28,11 @@ Shows verbose log.
 ```bash
 $ go run main.go [URL] -v
 ```
+
+## Prerequisites
+### Runtime
+* ffmpeg
+
+### Build
+* go 1.12 or higher
+* gomock (https://github.com/golang/mock)[https://github.com/golang/mock]
