@@ -1,3 +1,8 @@
+# THIS REPOSITORY IS ARCHIVED
+
+Use [ff-twmedia](https://github.com/mmktomato/ff-twmedia) instead.
+
+
 # go-twmedia
 My practice of Golang
 
